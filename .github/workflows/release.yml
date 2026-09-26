@@ -605,6 +605,7 @@ jobs:
         if: success()
         env:
           WEBHOOK_URL: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+          DISCORD_UPDATES_ROLE_ID: ${{ vars.DISCORD_UPDATES_ROLE_ID }}
           VERSION: ${{ steps.bump_version.outputs.version }}
           BASE_VERSION: ${{ steps.bump_version.outputs.base_version }}
           RELEASE_URL: https://github.com/${{ github.repository }}/releases/tag/${{ steps.bump_version.outputs.version }}
@@ -676,12 +677,9 @@ jobs:
           **Downloads**
           [View all platform downloads](${RELEASE_URL})"
 
-          # Use jq to safely construct JSON payload (handles quotes, newlines, special chars)
-          PAYLOAD=$(jq -n \
-            --arg title "New Release - ${VERSION}" \
-            --arg desc "$DESCRIPTION" \
-            --arg ts "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" \
-            '{username: "Sportarr", embeds: [{title: $title, description: $desc, color: 14427686, timestamp: $ts}]}')
+          PAYLOAD=$(TITLE="New Release - ${VERSION}" DESCRIPTION="$DESCRIPTION" \
+            TIMESTAMP="$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" \
+            bash .github/scripts/release-discord-payload.sh)
 
           # --fail-with-body makes curl exit non-zero on 4xx/5xx, but still
           # prints the response so we can see Discord's validation error if
